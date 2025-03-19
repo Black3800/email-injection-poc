@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  php-apache:
+    build:
+      context: .
+      dockerfile: Php.Dockerfile
+    container_name: php-app
+    restart: always
+    ports:
+      - "7654:80"
+    volumes:
+      - ./php-mail-app/src:/var/www/html
+    depends_on:
+      - mysql
+    networks:
+      - php-mail-app
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: app_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    expose:
+      - 3306
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./php-mail-app/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - php-mail-app
+
+  webserver:
+    build:
+      context: .
+      dockerfile: Sinatra.Dockerfile
+    container_name: ruby_smtp_webserver
+    restart: always
+    ports:
+      - "4567:4567"
+
+networks:
+  php-mail-app:
+    driver: bridge
+
+volumes:
+  mysql_data:
